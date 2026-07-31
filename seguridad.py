@@ -31,3 +31,16 @@ def crear_token_acceso(data: dict) -> str:
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     
     return encoded_jwt
+
+def verificar_token(token: str) -> dict:
+    """
+    Recibe el token, lo abre usando la SECRET_KEY y nos devuelve 
+    los datos del usuario (el email que guardamos en 'sub').
+    """
+    try:
+        # Intentamos decodificar el token
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload  # Si todo está bien, devuelve el diccionario con el email
+    except Exception:
+        # Si el token es falso, ha caducado o está manipulado, devolvemos None
+        return None

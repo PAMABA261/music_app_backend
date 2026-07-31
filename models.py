@@ -63,3 +63,11 @@ class PuntuacionMinijuego(SQLModel, table=True):
 
     usuario: "Usuario" = Relationship(back_populates="puntuaciones")
     minijuego: "Minijuego" = Relationship(back_populates="puntuaciones")
+
+# --- 6. TABLA PREGUNTAS TEST ---
+class PreguntasTest(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    enunciado: str
+    etiqueta_visual : Optional[str] = Field(default=None)
+    opciones_json: dict = Field(default={}, sa_column=Column(JSON))
+    indice_correcta: int 
