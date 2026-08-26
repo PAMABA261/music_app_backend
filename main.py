@@ -86,13 +86,29 @@ def login(credenciales: CredencialesLogin, db: Session = Depends(obtener_sesion)
     
     return {"token": token_real, "mensaje": f"Bienvenido {usuario_db.nombre}"}
 
+@app.get("/usuarios/me")
+def obtener_perfil_usuario(credenciales: HTTPAuthorizationCredentials = Security(security), db: Session = Depends(obtener_sesion)):
+    token_data = verificar_token(credenciales.credentials)
+    if not token_data:
+        raise HTTPException(status_code=401, detail="Token invalido")
+    usuario = db.exec(select(Usuario).where(Usuario.email == token_data["sub"])).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail='Usuario no encontrado')
+    return {
+        "nombre": usuario.nombre,
+        "exp": usuario.exp,
+        "racha_actual": usuario.racha_actual
+    }
+
 @app.post("/completar-minijuegos")
 def crear_minijuegos(minijuego: ProgresoMinijuego, credenciales: HTTPAuthorizationCredentials = Security(security), db: Session = Depends(obtener_sesion)):
     token_data = verificar_token(credenciales.credentials)
     if not token_data:
         raise HTTPException(status_code=401, detail="Token invalido")
     usuario = db.exec(select(Usuario).where(Usuario.email == token_data["sub"])).first()
-    usuario.exp *= minijuego.puntos
+    if not usuario:
+        raise HTTPException(status_code=404, detail='Usuario no encontrado')
+    usuario.exp += minijuego.puntos
     db.add(usuario)
     db.commit()
     return {"mensaje": f"Minijuego {minijuego.id_minijuego} completado, ganaste {minijuego.puntos} puntos de EXP"}

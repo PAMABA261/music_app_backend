@@ -12,10 +12,9 @@ def crear_tablas():
 
 def poblar_db():
     with Session(engine) as db:
-        # 1. Comprobamos si ya hay usuarios
         usuario_existente = db.exec(select(Usuario)).first()
         if not usuario_existente:
-            print("👤 Creando usuario de prueba por defecto...")
+            print("Creando usuario de prueba por defecto...")
             usuario_prueba = Usuario(
                 nombre="Estudiante",
                 email="test@test.com",
@@ -26,7 +25,6 @@ def poblar_db():
             db.add(usuario_prueba)
             db.commit()
 
-        # 2. Comprobamos si ya hay lecciones
         leccion_existente = db.exec(select(Leccion)).first()
         if not leccion_existente:
             print("📚 Creando lecciones teóricas iniciales con Markdown, Pentagramas y Símbolos...")
@@ -256,9 +254,8 @@ Cuando ves esa marca, debes "robar" un instante de la nota anterior para coger a
             
             db.add_all(lecciones)
             db.commit()
-            print("✅ Lecciones con Markdown inyectadas con éxito.")
+            print("Lecciones con Markdown inyectadas con éxito.")
 
-           # 3. Comprobamos si ya hay preguntas
         pregunta_existente = db.exec(select(PreguntasTest)).first()
         if not pregunta_existente:
             print("Creando preguntas de prueba...")
