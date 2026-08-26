@@ -47,6 +47,10 @@ class CredencialesRegistro(BaseModel):
     email: str
     password: str
 
+class ProgresoMinijuego(BaseModel):
+    id_minijuego: str
+    puntos: int
+
 # --- ENDPOINTS DE USUARIO ---
 
 @app.get("/")
@@ -81,6 +85,17 @@ def login(credenciales: CredencialesLogin, db: Session = Depends(obtener_sesion)
     token_real = crear_token_acceso(data={"sub": usuario_db.email})
     
     return {"token": token_real, "mensaje": f"Bienvenido {usuario_db.nombre}"}
+
+@app.post("/completar-minijuegos")
+def crear_minijuegos(minijuego: ProgresoMinijuego, credenciales: HTTPAuthorizationCredentials = Security(security), db: Session = Depends(obtener_sesion)):
+    token_data = verificar_token(credenciales.credentials)
+    if not token_data:
+        raise HTTPException(status_code=401, detail="Token invalido")
+    usuario = db.exec(select(Usuario).where(Usuario.email == token_data["sub"])).first()
+    usuario.exp *= minijuego.puntos
+    db.add(usuario)
+    db.commit()
+    return {"mensaje": f"Minijuego {minijuego.id_minijuego} completado, ganaste {minijuego.puntos} puntos de EXP"}
 
 # --- ENDPOINTS DE LECCIONES (NUEVOS) ---
 
