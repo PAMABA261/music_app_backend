@@ -51,6 +51,10 @@ class ProgresoMinijuego(BaseModel):
     id_minijuego: str
     puntos: int
 
+class UsuarioRanking(BaseModel):
+    nombre: str
+    exp: int
+
 # --- ENDPOINTS DE USUARIO ---
 
 @app.get("/")
@@ -91,9 +95,32 @@ def obtener_perfil_usuario(credenciales: HTTPAuthorizationCredentials = Security
     token_data = verificar_token(credenciales.credentials)
     if not token_data:
         raise HTTPException(status_code=401, detail="Token invalido")
+        
     usuario = db.exec(select(Usuario).where(Usuario.email == token_data["sub"])).first()
     if not usuario:
         raise HTTPException(status_code=404, detail='Usuario no encontrado')
+
+    ahora = datetime.now()
+    fecha_actual = ahora.date()
+
+    if usuario.ultima_conexion:
+        fecha_ultima = usuario.ultima_conexion.date()
+        diferencia_dias = (fecha_actual - fecha_ultima).days
+
+        if diferencia_dias == 1:
+            usuario.racha_actual += 1
+            usuario.ultima_conexion = ahora
+        elif diferencia_dias > 1:
+            usuario.racha_actual = 1
+            usuario.ultima_conexion = ahora
+    else:
+        usuario.racha_actual = 1
+        usuario.ultima_conexion = ahora
+
+    db.add(usuario)
+    db.commit()
+    db.refresh(usuario)
+
     return {
         "nombre": usuario.nombre,
         "exp": usuario.exp,
@@ -168,3 +195,9 @@ def completar_leccion(
 def obtener_preguntas(db: Session = Depends(obtener_sesion)):
     """Devuelve la lista de preguntas para el test de práctica"""
     return db.exec(select(PreguntasTest)).all()
+
+@app.get("/ranking", response_model=List[UsuarioRanking])
+def obtener_ranking(db: Session = Depends(obtener_sesion)):
+    """Devuelve el Top 10 de usuarios con más experiencia"""
+    top_usuarios = db.exec(select(Usuario).order_by(Usuario.exp.desc().limit(10))).all()
+    return top_usuarios
